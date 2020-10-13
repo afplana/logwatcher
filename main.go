@@ -21,38 +21,39 @@ func emailNotify(str string) {
 	msg := []byte(str) // Message of notification
 
 	// email details
-	Sender := os.Getenv("EMAIL_SENDER")
-	Pass := os.Getenv("EMAIL_SENDER_PASSWORD")
-	ToList := strings.Split(os.Getenv("EMAIL_RECEIVER_LIST"), ",")
+	sender := os.Getenv("EMAIL_SENDER")
+	password := os.Getenv("EMAIL_SENDER_PASSWORD")
+	toList := strings.Split(os.Getenv("EMAIL_RECEIVER_LIST"), ",")
 
 	// smtp server config.
-	Host := os.Getenv("EMAIL_CONFIG_HOST") // for testing should use "smtp.gmail.com"
-	Port := os.Getenv("EMAIL_CONFIG_PORT") // for testing 587
+	host := os.Getenv("EMAIL_CONFIG_HOST") // for testing should use "smtp.gmail.com"
+	port := os.Getenv("EMAIL_CONFIG_PORT") // for testing 587
 
 	// authentication details.
-	auth := smtp.PlainAuth("", Sender, Pass, Host)
+	auth := smtp.PlainAuth("", sender, password, host)
 
 	// Sending email.
-	err := smtp.SendMail(Host+":"+Port, auth, Sender, ToList, msg)
+	err := smtp.SendMail(host+":"+port, auth, sender, toList, msg)
 	checkError(err)
 
 	log.Println("Email Sent Successfully!")
 }
 
 // Watch logs files for errors
-func WatchLogs(path string) {
-	ErrorPattern := regexp.MustCompile("^.*\\[error\\].*")
+func watchLogs(path string) {
+	errorPattern := regexp.MustCompile("^.*\\[error\\].*")
 
 	t, err := tail.TailFile(path, tail.Config{Follow: true, ReOpen: true})
 	checkError(err)
 
 	for line := range t.Lines {
-		if ErrorPattern.MatchString(line.Text) {
+		if errorPattern.MatchString(line.Text) {
 			emailNotify(line.Text)
 		}
 	}
 }
 
 func main() {
-	WatchLogs("/home/aklan/VSProjects/tutor")
+	logsPath := os.Args[1]
+	watchLogs(logsPath)
 }
